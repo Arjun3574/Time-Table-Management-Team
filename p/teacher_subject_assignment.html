@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Teacher Subject Assignment</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: #eaeaf4;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .main-container { width: 100%; max-width: 620px; }
+
+        .card {
+            background: #ffffff;
+            border: 2px solid #c8bfea;
+            border-radius: 18px;
+            padding: 25px 35px;
+            margin-bottom: 20px;
+        }
+
+        .title-box {
+            background: #9b5fd4;
+            color: #ffffff;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 700;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .subtitle-box {
+            background: #5c25b0;
+            color: #ffffff;
+            width: fit-content;
+            min-width: 260px;
+            text-align: center;
+            margin: 0 auto 22px auto;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .info-banner {
+            display: none;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+        .info-banner.show    { display: block; }
+        .info-banner.warning { background: #fff8e1; color: #8a5a00; border: 1px solid #f0c36d; }
+        .info-banner.success { background: #e9f7ef; color: #1f7a3f; border: 1px solid #9fe0b8; }
+        .info-banner.error   { background: #feecea; color: #a8201f; border: 1px solid #f4b2b0; }
+
+        .field-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 18px;
+        }
+
+        .field-label {
+            width: 130px;
+            font-size: 15px;
+            font-weight: 600;
+            padding-top: 10px;
+            color: #222;
+            flex-shrink: 0;
+        }
+        .field-label.required::after { content: " *"; color: #e03030; font-weight: 700; }
+
+        .field-col { flex: 1; }
+
+        .inp {
+            width: 100%;
+            background: #ede9f8;
+            border: 2px solid #cfc5ee;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 14px;
+            color: #333;
+            outline: none;
+            transition: 0.2s;
+        }
+        .inp:focus   { border-color: #7c4cbf; }
+        .inp.error   { border-color: #dc3545; background: #fff3f3; }
+        .inp.success { border-color: #28a745; background: #f2fff6; }
+        .inp:disabled { background: #f0eefb; color: #777; cursor: not-allowed; }
+        #assignmentID { width: 100px; }
+        #teacherID, #subjectID { width: 280px; }
+        #divisionID, #academicYearID { width: 200px; }
+        select.inp { cursor: pointer; }
+
+        .err-msg { display: none; margin-top: 5px; color: #dc3545; font-size: 12px; }
+        .err-msg.show { display: block; }
+
+        .btn-row {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            min-width: 90px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn:hover  { opacity: 0.9; }
+        .btn:active { transform: scale(0.97); }
+
+        .btn-new    { background: #6366f1; }
+        .btn-save   { background: #27a96b; }
+        .btn-update { background: #2563eb; }
+        .btn-prev   { background: #0ea5e9; }
+        .btn-next   { background: #e8960f; }
+        .btn-exit   { background: #e03030; }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(19,15,48,0.55);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 24px;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            width: 100%;
+            max-width: 420px;
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+        .modal-content p { font-size: 16px; color: #242424; margin-bottom: 20px; }
+        .modal-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+
+        @media (max-width: 768px) {
+            .field-row { flex-direction: column; }
+            .field-label { width: 100%; padding-top: 0; }
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+
+    <div class="card">
+    <div class="title-box">Time Table Management System</div>
+    <div class="subtitle-box">Teacher Subject Assignment</div>
+
+        <div class="info-banner" id="infoBanner"></div>
+
+        <!-- Assignment ID -->
+        <div class="field-row">
+            <div class="field-label required">Assignment ID</div>
+            <div class="field-col">
+                <input class="inp" id="assignmentID" type="number" />
+            </div>
+        </div>
+
+        <!-- Teacher -->
+        <div class="field-row">
+            <div class="field-label required">Teacher</div>
+            <div class="field-col">
+                <select class="inp" id="teacherID">
+                    <option value="">-- Select Teacher --</option>
+                </select>
+                <div class="err-msg" id="errTeacher">Please select a teacher.</div>
+            </div>
+        </div>
+
+        <!-- Subject -->
+        <div class="field-row">
+            <div class="field-label required">Subject</div>
+            <div class="field-col">
+                <select class="inp" id="subjectID">
+                    <option value="">-- Select Subject --</option>
+                </select>
+                <div class="err-msg" id="errSubject">Please select a subject.</div>
+            </div>
+        </div>
+
+        <!-- Division -->
+        <div class="field-row">
+            <div class="field-label required">Division</div>
+            <div class="field-col">
+                <select class="inp" id="divisionID">
+                    <option value="">-- Select Division --</option>
+                </select>
+                <div class="err-msg" id="errDivision">Please select a division.</div>
+            </div>
+        </div>
+
+        <!-- Academic Year -->
+        <div class="field-row">
+            <div class="field-label required">Academic Year</div>
+            <div class="field-col">
+                <select class="inp" id="academicYearID">
+                    <option value="">-- Select Academic Year --</option>
+                </select>
+                <div class="err-msg" id="errAcademicYear">Please select an academic year.</div>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="btn-row">
+            <button class="btn btn-new" id="btnNew">New</button>
+            <button class="btn btn-save" id="btnSave">Save</button>
+            <button class="btn btn-update" id="btnUpdate" style="display: none;">Update</button>
+            <button class="btn btn-prev" id="btnPrev">Previous</button>
+            <button class="btn btn-next" id="btnNext">Next</button>
+            <button class="btn btn-exit" id="btnExit">Exit</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- Exit Confirm Modal -->
+<div class="modal" id="exitModal">
+    <div class="modal-content">
+        <p>Are you sure you want to exit? Any unsaved data will be lost.</p>
+        <div class="modal-actions">
+            <button class="btn btn-exit"   id="exitConfirmBtn" onclick="confirmExit()">Yes, Exit</button>
+            <button class="btn btn-update" id="exitCancelBtn"  onclick="closeExitModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ── Dynamic lookups ──
+    let teachers      = [];
+    let subjects      = [];
+    let divisions     = [];
+    let academicYears = [];
+
+    async function fetchLookups() {
+        try {
+            const [teachersRes, subjectsRes, divisionsRes, ayRes] = await Promise.all([
+                fetch('/api/teachers'),
+                fetch('/api/subjects'),
+                fetch('/api/divisions'),
+                fetch('/api/academic-years')
+            ]);
+            
+            if (!teachersRes.ok || !subjectsRes.ok || !divisionsRes.ok || !ayRes.ok) {
+                throw new Error('Failed to load lookup tables from database');
+            }
+            
+            teachers = await teachersRes.json();
+            subjects = await subjectsRes.json();
+            divisions = await divisionsRes.json();
+            academicYears = await ayRes.json();
+            
+            const populate = (id, data, valKey, labelKey) => {
+                const el = document.getElementById(id);
+                el.innerHTML = `<option value="">-- Select --</option>`;
+                data.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item[valKey];
+                    opt.textContent = `${item[valKey]} – ${item[labelKey]}`;
+                    el.appendChild(opt);
+                });
+            };
+            
+            populate('teacherID',      teachers,      'id', 'teacherName');
+            populate('subjectID',      subjects,      'id', 'subjectName');
+            populate('divisionID',     divisions,     'id', 'divisionName');
+            populate('academicYearID', academicYears, 'id', 'yearName');
+            
+        } catch (err) {
+            showBanner('Error loading lookups: ' + err.message, 'error');
+        }
+    }
+
+    // ── State ──
+    let records      = [];
+    let currentIndex = -1;
+    let editingIndex = -1;
+
+    async function fetchRecords() {
+        try {
+            const res = await fetch('/api/teacher-subject-assignments');
+            if (!res.ok) throw new Error('Failed to fetch assignments');
+            records = await res.json();
+            document.getElementById('assignmentID').value = getNextID();
+            updateButtonState();
+        } catch (err) {
+            showBanner('Error loading records: ' + err.message, 'error');
+        }
+    }
+
+    // ── Helpers ──
+    function getNextID() {
+        return records.length === 0 ? 1 : Math.max(...records.map(r => r.id)) + 1;
+    }
+
+    function getField(id) { return document.getElementById(id).value.trim(); }
+    function setField(id, val) { document.getElementById(id).value = val ?? ''; }
+
+    function updateButtonState() {
+        const val = parseInt(document.getElementById('assignmentID').value);
+        const matchIndex = records.findIndex(r => r.id === val);
+        if (matchIndex !== -1) {
+            document.getElementById('btnSave').style.display = 'none';
+            document.getElementById('btnUpdate').style.display = 'inline-block';
+            editingIndex = matchIndex;
+            currentIndex = matchIndex;
+        } else {
+            document.getElementById('btnSave').style.display = 'inline-block';
+            document.getElementById('btnUpdate').style.display = 'none';
+            editingIndex = -1;
+        }
+    }
+
+    // Event listener for ID manual entry
+    document.getElementById('assignmentID').addEventListener('input', function() {
+        const val = parseInt(this.value);
+        if (isNaN(val)) {
+            editingIndex = -1;
+            document.getElementById('btnSave').style.display = 'inline-block';
+            document.getElementById('btnUpdate').style.display = 'none';
+            return;
+        }
+        const matchIndex = records.findIndex(r => r.id === val);
+        if (matchIndex !== -1) {
+            const rec = records[matchIndex];
+            setField('teacherID', rec.teacherID);
+            setField('subjectID', rec.subjectID);
+            setField('divisionID', rec.divisionID);
+            setField('academicYearID', rec.academicYearID);
+            editingIndex = matchIndex;
+            currentIndex = matchIndex;
+            document.getElementById('btnSave').style.display = 'none';
+            document.getElementById('btnUpdate').style.display = 'inline-block';
+            showBanner(`Record with ID ${val} already exists. Loaded for editing.`, 'warning');
+            clearErrors();
+        } else {
+            editingIndex = -1;
+            document.getElementById('btnSave').style.display = 'inline-block';
+            document.getElementById('btnUpdate').style.display = 'none';
+        }
+    });
+
+    function showBanner(msg, type) {
+        const b = document.getElementById('infoBanner');
+        b.textContent = msg;
+        b.className = 'info-banner show ' + type;
+        setTimeout(() => { b.className = 'info-banner'; }, 4000);
+    }
+
+    function clearErrors() {
+        ['teacherID','subjectID','divisionID','academicYearID'].forEach(id => {
+            document.getElementById(id).classList.remove('error','success');
+        });
+        ['errTeacher','errSubject','errDivision','errAcademicYear'].forEach(id => {
+            document.getElementById(id).classList.remove('show');
+        });
+    }
+
+    // validate
+    function validate() {
+        let valid = true;
+        const fields = [
+            { id:'teacherID',      errId:'errTeacher' },
+            { id:'subjectID',      errId:'errSubject' },
+            { id:'divisionID',     errId:'errDivision' },
+            { id:'academicYearID', errId:'errAcademicYear' },
+        ];
+        fields.forEach(({ id, errId }) => {
+            const val = getField(id);
+            const inp = document.getElementById(id);
+            const err = document.getElementById(errId);
+            if (!val) {
+                inp.classList.add('error'); inp.classList.remove('success');
+                err.classList.add('show');
+                valid = false;
+            } else {
+                inp.classList.remove('error'); inp.classList.add('success');
+                err.classList.remove('show');
+            }
+        });
+        return valid;
+    }
+
+    function buildRecord() {
+        const tid = getField('teacherID');
+        const sid = getField('subjectID');
+        const did = getField('divisionID');
+        const aid = getField('academicYearID');
+        const teacher      = teachers.find(t => t.id == tid)?.teacherName || '';
+        const subject      = subjects.find(s => s.id == sid)?.subjectName || '';
+        const division     = divisions.find(d => d.id == did)?.divisionName || '';
+        const academicYear = academicYears.find(a => a.id == aid)?.yearName || '';
+        return {
+            id: parseInt(document.getElementById('assignmentID').value) || getNextID(),
+            teacherID: tid, teacher,
+            subjectID: sid, subject,
+            divisionID: did, division,
+            academicYearID: aid, academicYear
+        };
+    }
+
+    function resetForm() {
+        ['teacherID','subjectID','divisionID','academicYearID'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+        document.getElementById('assignmentID').value = getNextID();
+        updateButtonState();
+        editingIndex = -1;
+        currentIndex = -1;
+        clearErrors();
+    }
+
+    function loadRecord(index) {
+        if (index < 0 || index >= records.length) return;
+        const rec = records[index];
+        document.getElementById('assignmentID').value  = rec.id;
+        document.getElementById('teacherID').value      = rec.teacherID;
+        document.getElementById('subjectID').value      = rec.subjectID;
+        document.getElementById('divisionID').value     = rec.divisionID;
+        document.getElementById('academicYearID').value = rec.academicYearID;
+        editingIndex = index;
+        currentIndex = index;
+        document.getElementById('btnSave').style.display = 'none';
+        document.getElementById('btnUpdate').style.display = 'inline-block';
+        clearErrors();
+    }
+
+    async function saveRecord() {
+        if (!validate()) { showBanner('Please fill in all required fields before saving.', 'error'); return; }
+        const rec = buildRecord();
+        try {
+            const res = await fetch('/api/teacher-subject-assignments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(rec)
+            });
+            if (!res.ok) throw new Error(await res.text());
+            const saved = await res.json();
+            showBanner(`Assignment #${saved.id} saved successfully!`, 'success');
+            await fetchRecords();
+            resetForm();
+        } catch (err) {
+            showBanner('Error saving record: ' + err.message, 'error');
+        }
+    }
+
+    async function updateRecord() {
+        if (!validate()) { showBanner('Please fill in all required fields before updating.', 'error'); return; }
+        const rec = buildRecord();
+        try {
+            const res = await fetch(`/api/teacher-subject-assignments/${rec.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(rec)
+            });
+            if (!res.ok) throw new Error(await res.text());
+            const updated = await res.json();
+            showBanner(`Assignment #${updated.id} updated successfully!`, 'success');
+            await fetchRecords();
+            resetForm();
+        } catch (err) {
+            showBanner('Error updating record: ' + err.message, 'error');
+        }
+    }
+
+    function handlePrev() {
+        if (records.length === 0) {
+            showBanner('No records available.', 'warning');
+            return;
+        }
+        if (currentIndex > 0) {
+            loadRecord(currentIndex - 1);
+        } else if (currentIndex === 0) {
+            showBanner('You are at the first record.', 'warning');
+        } else {
+            loadRecord(records.length - 1);
+        }
+    }
+
+    function handleNext() {
+        if (records.length === 0) {
+            showBanner('No records available.', 'warning');
+            return;
+        }
+        if (currentIndex < records.length - 1) {
+            loadRecord(currentIndex + 1);
+        } else {
+            resetForm();
+            showBanner('You have reached the last record. Ready for new entry.', 'warning');
+        }
+    }
+
+    function showExitModal()  { document.getElementById('exitModal').classList.add('show'); }
+    function closeExitModal() { document.getElementById('exitModal').classList.remove('show'); }
+    function confirmExit()    { document.getElementById('exitModal').classList.remove('show'); showBanner('Form session ended. Thank you!', 'warning'); }
+
+    // ── Button listeners ──
+    document.getElementById('btnNew').addEventListener('click', resetForm);
+    document.getElementById('btnSave').addEventListener('click', saveRecord);
+    document.getElementById('btnUpdate').addEventListener('click', updateRecord);
+    document.getElementById('btnPrev').addEventListener('click', handlePrev);
+    document.getElementById('btnNext').addEventListener('click', handleNext);
+    document.getElementById('btnExit').addEventListener('click', showExitModal);
+
+    // ── Init ──
+    async function init() {
+        await fetchLookups();
+        await fetchRecords();
+    }
+    init();
+</script>
+</body>
+</html>

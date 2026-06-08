@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Time Slot Master</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: #eaeaf4;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .main-container { width: 100%; max-width: 750px; }
+        .card {
+            background: #ffffff;
+            border: 2px solid #c8bfea;
+            border-radius: 18px;
+            padding: 25px 35px;
+            margin-bottom: 20px;
+        }
+        .title-box {
+            background: #9b5fd4;
+            color: #ffffff;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 700;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        .subtitle-box {
+            background: #5c25b0;
+            color: #ffffff;
+            width: fit-content;
+            min-width: 240px;
+            text-align: center;
+            margin: 0 auto 22px auto;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .info-banner {
+            display: none;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+        .info-banner.show    { display: block; }
+        .info-banner.warning { background: #fff8e1; color: #8a5a00; border: 1px solid #f0c36d; }
+        .info-banner.success { background: #e9f7ef; color: #1f7a3f; border: 1px solid #9fe0b8; }
+        .info-banner.error   { background: #feecea; color: #a8201f; border: 1px solid #f4b2b0; }
+        .field-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 18px;
+        }
+        .field-label {
+            width: 140px;
+            font-size: 15px;
+            font-weight: 600;
+            padding-top: 10px;
+            color: #222;
+            flex-shrink: 0;
+        }
+        .field-label.required::after { content: " *"; color: #e03030; font-weight: 700; }
+        .field-col { flex: 1; }
+        .inp {
+            width: 100%;
+            background: #ede9f8;
+            border: 2px solid #cfc5ee;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 14px;
+            color: #333;
+            outline: none;
+            transition: 0.2s;
+        }
+        .inp:focus   { border-color: #7c4cbf; }
+        .inp.error   { border-color: #dc3545; background: #fff3f3; }
+        .inp.success { border-color: #28a745; background: #f2fff6; }
+        .inp[readonly] { background: #f0eefb; color: #666; cursor: not-allowed; }
+        #timeSlotID { width: 100px; }
+        #startTime, #endTime { width: 150px; }
+        #slotName { width: 200px; }
+        .err-msg { display: none; margin-top: 5px; color: #dc3545; font-size: 12px; }
+        .err-msg.show { display: block; }
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-top: 8px;
+        }
+        .checkbox-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: #7c4cbf; cursor: pointer; }
+        .checkbox-row label { font-size: 14px; color: #333; cursor: pointer; }
+        .btn-row {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            min-width: 110px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn:hover  { opacity: 0.9; }
+        .btn:active { transform: scale(0.97); }
+        .btn-new    { background: #6366f1; }
+        .btn-save   { background: #27a96b; }
+        .btn-update { background: #2563eb; }
+        .btn-prev   { background: #0ea5e9; }
+        .btn-next   { background: #e8960f; }
+        .btn-exit   { background: #e03030; }
+        /* Saved Records List */
+        .master-card { margin-top: 0; }
+        .master-item span { color: #2b2b2b; }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 8px;
+        }
+        /* Adjusted widths for more compact form */
+        .main-container { max-width: 620px; }
+        .btn { min-width: 90px; }
+        .field-label { width: 130px; }
+        .badge-break { background: #fff0d4; color: #8a5a00; border: 1px solid #f0c36d; }
+        .badge-teach { background: #e2f0ff; color: #1a56b0; border: 1px solid #90c5f7; }
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(19,15,48,0.55);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 24px;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            width: 100%;
+            max-width: 420px;
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+        .modal-content p { font-size: 16px; color: #242424; margin-bottom: 20px; }
+        .modal-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+        @media (max-width: 768px) {
+            .field-row { flex-direction: column; }
+            .field-label { width: 100%; padding-top: 0; }
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+
+    <!-- Form Card -->
+    <div class="card">
+        <div class="title-box">Time Table Management System</div>
+        <div class="subtitle-box">Time Slot Master</div>
+
+        <div class="info-banner" id="infoBanner"></div>
+
+        <!-- Slot ID -->
+        <div class="field-row">
+            <div class="field-label required">Slot ID</div>
+            <div class="field-col">
+                <input class="inp" id="timeSlotID" type="number" />
+            </div>
+        </div>
+
+        <!-- Start Time -->
+        <div class="field-row">
+            <div class="field-label required">Start Time</div>
+            <div class="field-col">
+                <input class="inp" id="startTime" type="time" />
+                <div class="err-msg" id="errStartTime">Please select the start time.</div>
+            </div>
+        </div>
+
+        <!-- End Time -->
+        <div class="field-row">
+            <div class="field-label required">End Time</div>
+            <div class="field-col">
+                <input class="inp" id="endTime" type="time" />
+                <div class="err-msg" id="errEndTime">Please select the end time.</div>
+            </div>
+        </div>
+
+        <!-- Slot Name (auto-generated) -->
+        <div class="field-row">
+            <div class="field-label required">Slot Name</div>
+            <div class="field-col">
+                <input class="inp" id="slotName" type="text"
+                       readonly maxlength="30" />
+                <div class="err-msg" id="errSlotName">Slot name is required. Please select start and end times.</div>
+            </div>
+        </div>
+
+        <!-- Is Break -->
+        <div class="field-row">
+            <div class="field-label">Slot Type</div>
+            <div class="field-col">
+                <div class="checkbox-row">
+                    <input type="checkbox" id="isBreak" />
+                    <label for="isBreak">Mark as Break Slot</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="btn-row">
+            <button class="btn btn-new" onclick="resetForm()">New</button>
+            <button class="btn btn-save" id="btnSave" onclick="saveRecord()">Save</button>
+            <button class="btn btn-update" id="btnUpdate" onclick="updateRecord()" style="display: none;">Update</button>
+            <button class="btn btn-prev" id="btnPrev" onclick="handlePrev()">Previous</button>
+            <button class="btn btn-next" id="btnNext" onclick="handleNext()">Next</button>
+            <button class="btn btn-exit" onclick="showExitModal()">Exit</button>
+        </div>
+    </div>
+    </div>
+
+</div>
+
+
+
+<!-- Exit Confirm Modal -->
+<div class="modal" id="exitModal">
+    <div class="modal-content">
+        <p>Are you sure you want to exit? Any unsaved data will be lost.</p>
+        <div class="modal-actions">
+            <button class="btn btn-exit" onclick="confirmExit()">Yes, Exit</button>
+            <button class="btn btn-update" onclick="closeExitModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let records      = [];
+    let currentIndex = -1;
+    let editingIndex = -1;
+
+    async function fetchRecords() {
+        try {
+            const res = await fetch('/api/timeslots');
+            if (!res.ok) throw new Error('Failed to fetch timeslots');
+            records = await res.json();
+            document.getElementById('timeSlotID').value = getNextID();
+            updateButtonState();
+        } catch (err) {
+            showBanner('Error loading records: ' + err.message, 'error');
+        }
+    }
+
+    function getNextID() {
+        return records.length === 0 ? 1 : Math.max(...records.map(r => r.id)) + 1;
+    }
+    function setField(id, val) { document.getElementById(id).value = val ?? ''; }
+    function getField(id)      { return document.getElementById(id).value.trim(); }
+
+    // Auto-fill slot name
+    document.getElementById('startTime').addEventListener('change', autoSlotName);
+    document.getElementById('endTime').addEventListener('change', autoSlotName);
+
+    function autoSlotName() {
+        const st = getField('startTime');
+        const et = getField('endTime');
+        const slotEl = document.getElementById('slotName');
+        if (st && et) {
+            slotEl.value = `${st} - ${et}`;
+            slotEl.classList.add('success');
+            document.getElementById('errSlotName').classList.remove('show');
+        } else {
+            slotEl.value = '';
+            slotEl.classList.remove('success');
+        }
+    }
+
+    function updateButtonState() {
+        const val = parseInt(document.getElementById('timeSlotID').value);
+        const matchIndex = records.findIndex(r => r.id === val);
+        if (matchIndex !== -1) {
+            document.getElementById('btnSave').style.display = 'none';
+            document.getElementById('btnUpdate').style.display = 'inline-block';
+            editingIndex = matchIndex;
+            currentIndex = matchIndex;
+        } else {
+            document.getElementById('btnSave').style.display = 'inline-block';
+            document.getElementById('btnUpdate').style.display = 'none';
+            editingIndex = -1;
+        }
+    }
+
+    // Event listener for ID manual entry
+    document.getElementById('timeSlotID').addEventListener('input', function() {
+        const val = parseInt(this.value);
+        if (isNaN(val)) {
+            editingIndex = -1;
+            document.getElementById('btnSave').style.display = 'inline-block';
+            document.getElementById('btnUpdate').style.display = 'none';
+            return;
+        }
+        const matchIndex = records.findIndex(r => r.id === val);
+        if (matchIndex !== -1) {
+            const rec = records[matchIndex];
+            setField('startTime', rec.startTime);
+            setField('endTime', rec.endTime);
+            setField('slotName', rec.slotName);
+            document.getElementById('isBreak').checked = rec.isBreak;
+            editingIndex = matchIndex;
+            currentIndex = matchIndex;
+            document.getElementById('btnSave').style.display = 'none';
+            document.getElementById('btnUpdate').style.display = 'inline-block';
+            showBanner(`Record with ID ${val} already exists. Loaded for editing.`, 'warning');
+            clearErrors();
+            document.getElementById('slotName').classList.add('success');
+            document.getElementById('startTime').classList.add('success');
+            document.getElementById('endTime').classList.add('success');
+        } else {
+            editingIndex = -1;
+            document.getElementById('btnSave').style.display = 'inline-block';
+            document.getElementById('btnUpdate').style.display = 'none';
+        }
+    });
+
+    function resetForm() {
+        setField('startTime', '');
+        setField('endTime', '');
+        setField('slotName', '');
+        document.getElementById('isBreak').checked = false;
+        document.getElementById('timeSlotID').value = getNextID();
+        updateButtonState();
+        editingIndex = -1;
+        currentIndex = -1;
+        clearErrors();
+    }
+
+    function clearErrors() {
+        ['startTime','endTime','slotName'].forEach(id => {
+            document.getElementById(id).classList.remove('error','success');
+            const errId = 'err' + id.charAt(0).toUpperCase() + id.slice(1);
+            document.getElementById(errId).classList.remove('show');
+        });
+    }
+
+    // Exit via modal (no browser confirm)
+    function showExitModal()  { document.getElementById('exitModal').classList.add('show'); }
+    function closeExitModal() { document.getElementById('exitModal').classList.remove('show'); }
+    function confirmExit()    { document.getElementById('exitModal').classList.remove('show'); showBanner('Form session ended. Thank you!', 'warning'); }
+
+    function showBanner(msg, type) {
+        const b = document.getElementById('infoBanner');
+        b.textContent = msg;
+        b.className = 'info-banner show ' + type;
+        setTimeout(() => { b.className = 'info-banner'; }, 4500);
+    }
+
+    function validate() {
+        let valid = true;
+        const timeFields = [
+            { id: 'startTime', errId: 'errStartTime', msg: 'Please select the start time.' },
+            { id: 'endTime',   errId: 'errEndTime',   msg: 'Please select the end time.' },
+        ];
+        timeFields.forEach(({ id, errId, msg }) => {
+            const val = getField(id);
+            const inp = document.getElementById(id);
+            const err = document.getElementById(errId);
+            err.textContent = msg;
+            if (!val) {
+                inp.classList.add('error'); inp.classList.remove('success');
+                err.classList.add('show');
+                valid = false;
+            } else {
+                inp.classList.remove('error'); inp.classList.add('success');
+                err.classList.remove('show');
+            }
+        });
+        const st = getField('startTime'), et = getField('endTime');
+        if (st && et && st >= et) {
+            document.getElementById('endTime').classList.add('error');
+            document.getElementById('errEndTime').textContent = 'End time must be after start time.';
+            document.getElementById('errEndTime').classList.add('show');
+            valid = false;
+        }
+        return valid;
+    }
+
+    function buildRecord() {
+        autoSlotName();
+        return {
+            id:        parseInt(document.getElementById('timeSlotID').value) || getNextID(),
+            startTime: getField('startTime'),
+            endTime:   getField('endTime'),
+            slotName:  getField('slotName'),
+            isBreak:   document.getElementById('isBreak').checked
+        };
+    }
+
+    async function saveRecord() {
+        if (!validate()) { showBanner('Please fill in all required fields before saving.', 'error'); return; }
+        const rec = buildRecord();
+        try {
+            const res = await fetch('/api/timeslots', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(rec)
+            });
+            if (!res.ok) throw new Error(await res.text());
+            const saved = await res.json();
+            showBanner(`Time slot "${saved.slotName}" has been saved successfully!`, 'success');
+            await fetchRecords();
+            resetForm();
+        } catch (err) {
+            showBanner('Error saving record: ' + err.message, 'error');
+        }
+    }
+
+    async function updateRecord() {
+        if (!validate()) { showBanner('Please fill in all required fields before updating.', 'error'); return; }
+        const rec = buildRecord();
+        try {
+            const res = await fetch(`/api/timeslots/${rec.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(rec)
+            });
+            if (!res.ok) throw new Error(await res.text());
+            const updated = await res.json();
+            showBanner(`Time slot "${updated.slotName}" has been updated successfully!`, 'success');
+            await fetchRecords();
+            resetForm();
+        } catch (err) {
+            showBanner('Error updating record: ' + err.message, 'error');
+        }
+    }
+
+    function loadRecord(index) {
+        if (index < 0 || index >= records.length) return;
+        const rec = records[index];
+        document.getElementById('timeSlotID').value = rec.id;
+        setField('startTime', rec.startTime);
+        setField('endTime', rec.endTime);
+        setField('slotName', rec.slotName);
+        document.getElementById('isBreak').checked = rec.isBreak;
+        editingIndex = index;
+        currentIndex = index;
+        document.getElementById('btnSave').style.display = 'none';
+        document.getElementById('btnUpdate').style.display = 'inline-block';
+        clearErrors();
+        document.getElementById('slotName').classList.add('success');
+        document.getElementById('startTime').classList.add('success');
+        document.getElementById('endTime').classList.add('success');
+    }
+
+    function handlePrev() {
+        if (records.length === 0) {
+            showBanner('No records available.', 'warning');
+            return;
+        }
+        if (currentIndex > 0) {
+            loadRecord(currentIndex - 1);
+        } else if (currentIndex === 0) {
+            showBanner('You are at the first record.', 'warning');
+        } else {
+            loadRecord(records.length - 1);
+        }
+    }
+
+    function handleNext() {
+        if (records.length === 0) {
+            showBanner('No records available.', 'warning');
+            return;
+        }
+        if (currentIndex < records.length - 1) {
+            loadRecord(currentIndex + 1);
+        } else {
+            resetForm();
+            showBanner('You have reached the last record. Ready for new entry.', 'warning');
+        }
+    }
+
+    // Init
+    fetchRecords();
+</script>
+</body>
+</html>
